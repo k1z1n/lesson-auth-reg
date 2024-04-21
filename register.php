@@ -1,3 +1,32 @@
+<?php
+
+require_once 'config.php';
+unset ($_SESSION[ 'errors']);
+$_SESSION[ 'errors'] = [];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+    $email = $_POST['email'];
+
+    $user = $pdo->query("SELECT email FROM users WHERE email = \"$email\"")->fetch(2);
+
+    if(empty($username) || empty($password) || empty($email)) {
+        $_SESSION[ 'errors' ][] = 'Заполните все поля';
+    }elseif (!empty($user)){
+        $_SESSION['errors'][] = 'уже зарегестрирован';
+    }
+    else{
+        $password = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $pdo->prepare("INSERT INTO users (username, password, email) VALUES (:username, :password, :email)");
+        $stmt->bindParam(':username', $username);
+        $stmt->bindParam(':password', $password);
+        $stmt->bindParam(':email', $email);
+        $stmt->execute();
+        header('Location: login.php');
+    }
+}
+
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,19 +42,7 @@
         <h2>Регистрация</h2>
         <form action="#" method="post">
             <div class="form-group">
-                <label for="firstName">Имя:</label>
-                <input type="text" id="firstName" name="firstName" required>
-            </div>
-            <div class="form-group">
-                <label for="lastName">Фамилия:</label>
-                <input type="text" id="lastName" name="lastName" required>
-            </div>
-            <div class="form-group">
-                <label for="middleName">Отчество:</label>
-                <input type="text" id="middleName" name="middleName" required>
-            </div>
-            <div class="form-group">
-                <label for="username">Логин:</label>
+                <label for="username">Имя:</label>
                 <input type="text" id="username" name="username" required>
             </div>
             <div class="form-group">
@@ -39,10 +56,6 @@
             <div class="form-group">
                 <label for="confirmPassword">Повторите пароль:</label>
                 <input type="password" id="confirmPassword" name="confirmPassword" required>
-            </div>
-            <div class="form-group-rule">
-                <input type="checkbox" id="agree" name="agree" required>
-                <label for="agree">Я согласен с правилами</label>
             </div>
             <input type="submit" value="Зарегистрироваться">
         </form>
